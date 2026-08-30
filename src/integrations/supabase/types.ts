@@ -483,6 +483,36 @@ export type Database = {
         }
         Relationships: []
       }
+      fcm_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string
+          platform: string
+          token: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       inventory_reservations: {
         Row: {
           child_order_id: string | null
@@ -3369,6 +3399,7 @@ export type Database = {
           unit: string
         }[]
       }
+      send_fcm_push: { Args: { _notification_id: string }; Returns: undefined }
       send_onesignal_push: {
         Args: { _notification_id: string }
         Returns: undefined
