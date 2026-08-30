@@ -1,31 +1,44 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { promptAndRegister, logoutOneSignal } from "@/integrations/onesignal";
+import { refreshPushToken, disablePush, onForegroundMessage } from "@/integrations/firebase/messaging";
 import { toast } from "sonner";
 
 /**
- * - Registers the signed-in user with OneSignal (asks for push permission)
+ * - Keeps the signed-in user's FCM token stored in Supabase (refresh on login)
+ * - Shows foreground FCM messages as toasts
  * - Subscribes to Realtime on the `notifications` table for in-app toasts
  */
 export function useNotifications() {
   const { user } = useAuth();
   const registered = useRef<string | null>(null);
 
-  // OneSignal register on login
+  // FCM token refresh on login / cleanup on logout
   useEffect(() => {
     if (!user) {
       if (registered.current) {
-        logoutOneSignal();
+        const previous = registered.current;
         registered.current = null;
+        disablePush(previous);
       }
       return;
     }
     if (registered.current === user.id) return;
     registered.current = user.id;
-    // Delay slightly so login UI settles
-    const t = setTimeout(() => { promptAndRegister(user.id); }, 1500);
+    const t = setTimeout(() => { refreshPushToken(user.id); }, 1500);
     return () => clearTimeout(t);
+  }, [user]);
+
+  // Foreground push messages
+  useEffect(() => {
+    if (!user) return;
+    let unsubscribe: (() => void) | undefined;
+    onForegroundMessage((payload) => {
+      const title = payload?.notification?.title ?? payload?.data?.title;
+      if (!title) return;
+      toast(title, { description: payload?.notification?.body ?? payload?.data?.body });
+    }).then((fn) => { unsubscribe = fn; });
+    return () => { unsubscribe?.(); };
   }, [user]);
 
   // Realtime in-app notifications
