@@ -1,46 +1,27 @@
-# Multi-Shop Delivery — Phase 2 Rollout Plan
+# Switch push notifications to Firebase Cloud Messaging
 
-Sequenced to minimize risk. After every phase I'll pause for you to test before moving on. Existing single-shop orders keep working unchanged throughout.
+Supabase keeps doing everything it does today: auth, database, storage, realtime, and the `notifications` table used for in-app history and live toasts. Only the *push delivery channel* changes from OneSignal to FCM.
 
-## Phase A — Delivery Core (highest risk, ship first)
+## What exists today
 
-Everything the rider and customer experience end-to-end for a multi-shop order.
+- `src/integrations/onesignal/index.ts` — loads the OneSignal web SDK, asks permission, saves the subscription id into `onesignal_subscriptions`.
+- `src/hooks/useNotifications.tsx` — registers the signed-in user for push, and subscribes to Supabase Realtime on `notifications` for in-app toasts.
+- Two service-worker routes under `src/routes/api/public/OneSignalSDK*Worker.js.ts` plus copies in `public/`.
+- Database: every insert into `notifications` fires trigger `notifications_dispatch_push` → `send_onesignal_push()`, which reads keys from `app_config`, collects the user's player ids, and POSTs to OneSignal via `pg_net`. Attempts are logged in `notification_dispatch_log`.
+- Order-status changes already insert into `notifications` (via `notify_user` / `notify_role`), so nothing about order logic needs to change — only the delivery step.
 
-1. **Consolidated delivery task** — when all child orders reach `ready`, create ONE task on the parent, one rider assignment. RPC: `create_consolidated_delivery_task(parent_id)`, idempotent (unique index on `parent_order_id` in delivery tasks).
-2. **Smart rider assignment** — new RPC `rank_riders_for_parent(parent_id, limit)` scoring by distance to first pickup, availability, active load, rating, ETA. Notify top N; expand radius on no-accept after 60s. Replaces broadcast.
-3. **Smart pickup sequencing** — call Google Routes `computeRoutes` with waypoints on task creation, store `pickup_sequence jsonb` on parent. Recompute on rider location update if traffic delta > 20%.
-4. **Redesigned rider screen** (`/delivery/task/$id`) — Multi-shop badge, parent order #, shops/products/earnings/distance/ETA header, ordered pickup list (Shop A → B → C) with per-shop products, status, "Navigate" (deep-link Google Maps), "Pickup Complete" (calls `rider_verify_pickup` with OTP). After all pickups → "Proceed to Customer" CTA. Falls back to existing single-shop UI when `is_parent = false`.
-5. **Live ETA** — rider posts GPS to `partner_update_location` every 20s; RPC `compute_live_eta(parent_id)` returns `{to_next_pickup, to_customer}`; customer/admin/rider surfaces subscribe via existing Realtime.
-6. **Reservation auto-release** — pg_cron every minute → `release_expired_reservations()` (already exists, wire the schedule).
-7. **Idempotency guards** — unique constraints on `(parent_order_id)` in delivery tasks, `(order_id, shop_id, event_type)` in pickup_events, `(order_id, user_id, kind)` in notifications dispatch. Wrap RPC bodies in advisory locks keyed by parent_order_id.
+## What will change
 
-**Checkpoint A**: You test a 2-shop order end-to-end (customer → both shopkeepers accept → rider picks both → deliver). I fix any bugs before Phase B.
+1. **Connect the Firebase Cloud Messaging connector** (with web push) so the service-account key stays server-side and the public web values arrive as environment variables. No credentials in source.
+2. **New table `public.fcm_tokens`** — required, because FCM tokens are a different identifier from OneSignal player ids:
+   `id uuid`, `user_id uuid → auth.users`, `token text unique`, `platform text default 'web'`, `user_agent text`, `last_seen_at timestamptz`, `created_at timestamptz`. RLS: users manage only their own rows; `service_role` full access. Existing tables are untouched (`onesignal_subscriptions` stays in place, unused, so nothing breaks).
+3. **Client messaging module** `src/integrations/firebase/messaging.ts` — permission request from a user gesture, service-worker registration, `getToken` with the VAPID key, upsert into `fcm_tokens`, token-refresh handling, `onMessage` foreground handler that shows a toast, and token deletion on logout.
+4. **Service worker** `public/firebase-messaging-sw.js` — receives background pushes (config passed via query string, since a worker cannot read Vite env).
+5. **`src/hooks/useNotifications.tsx`** — swap the OneSignal register/logout calls for the FCM equivalents. Realtime in-app toasts stay exactly as they are.
+6. **Server-side send path** — a server route `src/routes/api/public/fcm-dispatch.ts`, protected by a shared secret, sends the push through the Lovable connector gateway (`v1/projects/_/messages:send`). Firebase Admin credentials never reach the browser. The database trigger is repointed from `send_onesignal_push()` to a `send_fcm_push()` function that calls this route with `pg_net`, keeping the same `notification_dispatch_log` bookkeeping and the same "never block the insert" behaviour. Tokens that FCM reports as `UNREGISTERED`/invalid are deleted from `fcm_tokens`.
+7. **Admin diagnostics** — `src/components/OneSignalDiagnostics.tsx` (shown at `/admin/notifications`) is replaced by an FCM diagnostics panel: permission state, worker registration, current token, stored token count, plus a "send test push" button.
 
-## Phase B — Customer Resolution + Stability
+## Notes
 
-1. **Unavailable items UI** — when `place_multi_shop_order` returns `routing_status = 'partial_no_replacement'`, customer sees a modal listing unavailable lines with three actions per item: Remove / Replace (opens similar-product picker via `list_customer_products` filtered by category) / Cancel entire order. RPC `resolve_unavailable_items(parent_id, actions[])` recomputes totals + reservations.
-2. **Duplicate protection audit** — verify guards from A.7, add missing ones (parent order create uses `md5(user_id||cart_snapshot||minute)` idempotency key), notification dispatch de-dupes on `(user_id, order_id, kind)` within 60s.
-3. **Perf pass** — remove polling on routes that already have Realtime (finish the sweep from the earlier stability phase), memoize heavy renders in rider/shopkeeper dashboards, dedupe overlapping queries.
-4. **Stability sweep** — Playwright smoke across all role dashboards, fix any frozen buttons / blank routes.
-
-**Checkpoint B**: You verify customer resolution flow + full app feels smooth.
-
-## Phase C — Admin Visibility
-
-1. **Admin timeline UI** — new route `/admin/orders/$id/timeline` reading `admin_order_timeline(parent_id)`, vertical event feed (parent created → reserved → shop selection → each child accept/reject → replacement → ready → rider assigned → each pickup → delivered). Filter by parent order / shop / rider / date.
-2. **Multi-shop analytics** — extend `/admin/earnings` (or new `/admin/analytics/multi-shop`) with: single vs multi-shop volume, avg shop acceptance time, avg rider assignment time, pickup duration, delivery duration, shop rejection %, rider cancel %, multi-shop success %. Charts via Recharts, date filter, CSV export.
-
-**Checkpoint C**: You review admin visibility.
-
-## Phase D — QA & Hardening
-
-Playwright end-to-end scenarios: single-shop happy path, 3-shop happy path, 1-shop-rejects-with-replacement, 1-shop-rejects-no-replacement (→ customer resolution), rider cancel after pickup, OTP mismatch. Fix everything found. Final production-readiness report.
-
-## What I will NOT do
-
-- Rewrite the existing single-shop `place_order` / `partner_*` flow. Multi-shop is additive; old orders keep their path.
-- Ship placeholder UI. Every screen listed above is fully wired or not shipped in that phase.
-
-## Approval needed
-
-Reply "go" and I'll start Phase A immediately. If you want to reorder anything (e.g. admin timeline before rider UX), say so now.
+- Browsers block the permission prompt inside the Lovable preview iframe, so the UI will tell you to open the app in its own tab; production is unaffected.
+- Nothing is removed from the `notifications` table, and no existing Supabase table or column is altered.
