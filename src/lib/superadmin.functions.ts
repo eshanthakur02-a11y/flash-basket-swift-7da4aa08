@@ -36,12 +36,12 @@ export const getIntegrationStatus = createServerFn({ method: "POST" })
       payments: [present("RAZORPAY_KEY_ID"), present("RAZORPAY_KEY_SECRET"), present("RAZORPAY_WEBHOOK_SECRET")],
       maps: [present("GOOGLE_MAPS_API_KEY"), present("GOOGLE_MAPS_BROWSER_KEY")],
       messaging: [
-        present("ONESIGNAL_APP_ID"),
-        present("ONESIGNAL_REST_API_KEY"),
+        present("FIREBASE_MESSAGING_API_KEY"),
         present("WHATSAPP_API_TOKEN"),
         present("SMS_API_KEY"),
         present("RESEND_API_KEY"),
       ],
+
       ai: [present("LOVABLE_API_KEY")],
       bootstrap: [present("SUPER_ADMIN_EMAIL"), present("SUPER_ADMIN_PASSWORD")],
     };
