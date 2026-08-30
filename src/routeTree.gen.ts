@@ -105,8 +105,6 @@ import { Route as CustomerOrdersIdRouteImport } from './routes/customer.orders.$
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
 import { Route as ApiPublicFcmDispatchRouteImport } from './routes/api/public/fcm-dispatch'
 import { Route as ApiPublicBootstrapSuperAdminRouteImport } from './routes/api/public/bootstrap-super-admin'
-import { Route as ApiPublicOneSignalSDKWorkerDotjsRouteImport } from './routes/api/public/OneSignalSDKWorker[.]js'
-import { Route as ApiPublicOneSignalSDKUpdaterWorkerDotjsRouteImport } from './routes/api/public/OneSignalSDKUpdaterWorker[.]js'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 
 const WishlistRoute = WishlistRouteImport.update({
@@ -592,18 +590,6 @@ const ApiPublicBootstrapSuperAdminRoute =
     path: '/api/public/bootstrap-super-admin',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicOneSignalSDKWorkerDotjsRoute =
-  ApiPublicOneSignalSDKWorkerDotjsRouteImport.update({
-    id: '/api/public/OneSignalSDKWorker.js',
-    path: '/api/public/OneSignalSDKWorker.js',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicOneSignalSDKUpdaterWorkerDotjsRoute =
-  ApiPublicOneSignalSDKUpdaterWorkerDotjsRouteImport.update({
-    id: '/api/public/OneSignalSDKUpdaterWorker.js',
-    path: '/api/public/OneSignalSDKUpdaterWorker.js',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -697,8 +683,6 @@ export interface FileRoutesByFullPath {
   '/support/tickets': typeof SupportTicketsRouteWithChildren
   '/orders/': typeof OrdersIndexRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
-  '/api/public/OneSignalSDKUpdaterWorker.js': typeof ApiPublicOneSignalSDKUpdaterWorkerDotjsRoute
-  '/api/public/OneSignalSDKWorker.js': typeof ApiPublicOneSignalSDKWorkerDotjsRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -798,8 +782,6 @@ export interface FileRoutesByTo {
   '/support/tickets': typeof SupportTicketsRouteWithChildren
   '/orders': typeof OrdersIndexRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
-  '/api/public/OneSignalSDKUpdaterWorker.js': typeof ApiPublicOneSignalSDKUpdaterWorkerDotjsRoute
-  '/api/public/OneSignalSDKWorker.js': typeof ApiPublicOneSignalSDKWorkerDotjsRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -900,8 +882,6 @@ export interface FileRoutesById {
   '/support/tickets': typeof SupportTicketsRouteWithChildren
   '/orders/': typeof OrdersIndexRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
-  '/api/public/OneSignalSDKUpdaterWorker.js': typeof ApiPublicOneSignalSDKUpdaterWorkerDotjsRoute
-  '/api/public/OneSignalSDKWorker.js': typeof ApiPublicOneSignalSDKWorkerDotjsRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -1003,8 +983,6 @@ export interface FileRouteTypes {
     | '/support/tickets'
     | '/orders/'
     | '/admin/orders/$id'
-    | '/api/public/OneSignalSDKUpdaterWorker.js'
-    | '/api/public/OneSignalSDKWorker.js'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
     | '/api/public/razorpay-webhook'
@@ -1104,8 +1082,6 @@ export interface FileRouteTypes {
     | '/support/tickets'
     | '/orders'
     | '/admin/orders/$id'
-    | '/api/public/OneSignalSDKUpdaterWorker.js'
-    | '/api/public/OneSignalSDKWorker.js'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
     | '/api/public/razorpay-webhook'
@@ -1205,8 +1181,6 @@ export interface FileRouteTypes {
     | '/support/tickets'
     | '/orders/'
     | '/admin/orders/$id'
-    | '/api/public/OneSignalSDKUpdaterWorker.js'
-    | '/api/public/OneSignalSDKWorker.js'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
     | '/api/public/razorpay-webhook'
@@ -1245,8 +1219,6 @@ export interface RootRouteChildren {
   OrdersIdRoute: typeof OrdersIdRoute
   ProductSlugRoute: typeof ProductSlugRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
-  ApiPublicOneSignalSDKUpdaterWorkerDotjsRoute: typeof ApiPublicOneSignalSDKUpdaterWorkerDotjsRoute
-  ApiPublicOneSignalSDKWorkerDotjsRoute: typeof ApiPublicOneSignalSDKWorkerDotjsRoute
   ApiPublicBootstrapSuperAdminRoute: typeof ApiPublicBootstrapSuperAdminRoute
   ApiPublicFcmDispatchRoute: typeof ApiPublicFcmDispatchRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
@@ -1926,20 +1898,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBootstrapSuperAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/OneSignalSDKWorker.js': {
-      id: '/api/public/OneSignalSDKWorker.js'
-      path: '/api/public/OneSignalSDKWorker.js'
-      fullPath: '/api/public/OneSignalSDKWorker.js'
-      preLoaderRoute: typeof ApiPublicOneSignalSDKWorkerDotjsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/OneSignalSDKUpdaterWorker.js': {
-      id: '/api/public/OneSignalSDKUpdaterWorker.js'
-      path: '/api/public/OneSignalSDKUpdaterWorker.js'
-      fullPath: '/api/public/OneSignalSDKUpdaterWorker.js'
-      preLoaderRoute: typeof ApiPublicOneSignalSDKUpdaterWorkerDotjsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/orders/$id': {
       id: '/admin/orders/$id'
       path: '/$id'
@@ -2192,9 +2150,6 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersIdRoute: OrdersIdRoute,
   ProductSlugRoute: ProductSlugRoute,
   OrdersIndexRoute: OrdersIndexRoute,
-  ApiPublicOneSignalSDKUpdaterWorkerDotjsRoute:
-    ApiPublicOneSignalSDKUpdaterWorkerDotjsRoute,
-  ApiPublicOneSignalSDKWorkerDotjsRoute: ApiPublicOneSignalSDKWorkerDotjsRoute,
   ApiPublicBootstrapSuperAdminRoute: ApiPublicBootstrapSuperAdminRoute,
   ApiPublicFcmDispatchRoute: ApiPublicFcmDispatchRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
